@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 
 from requests.models import Response
 
@@ -26,6 +27,7 @@ from localstack.services import plugins
 from localstack.services.cloudwatch.cloudwatch_listener import PATH_GET_RAW_METRICS
 from localstack.services.generic_proxy import ProxyListener, modify_and_forward, start_proxy_server
 from localstack.services.infra import PROXY_LISTENERS
+from localstack.services.plugins import ServicePluginManager
 from localstack.services.s3.s3_utils import uses_host_addressing
 from localstack.services.sqs.sqs_listener import is_sqs_queue_url
 from localstack.utils import persistence
@@ -70,6 +72,11 @@ API_UNKNOWN = "_unknown_"
 
 
 class ProxyListenerEdge(ProxyListener):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.service_manager = ServicePluginManager()
+
     def forward_request(self, method, path, data, headers):
 
         if config.EDGE_FORWARD_URL:
@@ -164,6 +171,9 @@ class ProxyListenerEdge(ProxyListener):
             lock_ctx = empty_context_manager()
 
         with lock_ctx:
+            then = time.time()
+            service = self.service_manager.require(api)
+            print("getting %s took %.2f ms" % (api, (time.time() - then) * 1000))
             return do_forward_request(api, method, path, data, headers, port=port)
 
     def return_response(self, method, path, data, headers, response, request_handler=None):

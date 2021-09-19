@@ -546,8 +546,6 @@ def do_start_infra(asynchronous, apis, is_in_docker):
     @log_duration()
     def start_api_services():
 
-        # Some services take a bit to come up
-        sleep_time = 5
         # start services
         thread = None
 
@@ -558,7 +556,6 @@ def do_start_infra(asynchronous, apis, is_in_docker):
                 t1 = plugin.start(asynchronous=True)
                 thread = thread or t1
 
-        time.sleep(sleep_time)
         # ensure that all infra components are up and running
         check_infra(apis=apis)
         # restore persisted data
